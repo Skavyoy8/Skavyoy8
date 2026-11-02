@@ -21,7 +21,7 @@ QUERY = """query($login: String!) {
     createdAt
     repositories(ownerAffiliations: OWNER, isFork: false, privacy: PUBLIC, first: 100) {
       totalCount
-      nodes { stargazerCount pushedAt
+      nodes { name stargazerCount pushedAt
         languages(first: 10, orderBy: {field: SIZE, direction: DESC}) { edges { size node { name color } } } }
     }
     contributionsCollection {
@@ -62,6 +62,8 @@ def compute(u):
     langs = Counter()
     colors = {}
     for repo in u["repositories"]["nodes"]:
+        if repo["name"].lower() == LOGIN.lower():
+            continue  # le dépôt du profil (ces scripts) ne compte pas
         for e in repo["languages"]["edges"]:
             langs[e["node"]["name"]] += e["size"]
             colors[e["node"]["name"]] = e["node"]["color"] or MUT
