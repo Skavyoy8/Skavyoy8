@@ -1,0 +1,45 @@
+name: profil
+
+# Régénère chaque nuit les stats façon btop et le serpent, puis les publie sur la branche "output".
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profil
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Serpent des contributions
+        uses: Platane/snk/svg-only@v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: |
+            dist/snake-dark.svg?palette=github-dark&color_snake=#3dff9a&color_dots=#161f2b,#0d4430,#127a51,#22c27a,#3dff9a
+            dist/snake-light.svg?palette=github-light&color_snake=#0e8f55&color_dots=#ebedf0,#b9f0d2,#73dba2,#2fbf71,#0e8f55
+
+      - name: Stats façon btop
+        run: python3 scripts/stats.py dist/stats.svg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROFILE_LOGIN: ${{ github.repository_owner }}
+
+      - name: Publier sur la branche output
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: output
+          build_dir: dist
+          commit_message: "maj des stats"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
